@@ -1,25 +1,37 @@
-function [r, dr, ddr, a, P] = scalpstep(rprev, drprev, ddrprev, aprev, m, c, omega, U, M, n, Pprev, W, Q)
-  xprev = packx(rprev, drprev, ddrprev, aprev);
+function [r, s, a, P] = slamstep(rprev, sprev, aprev, Pprev, m, c, Ars, Hrs, Qrs, Rm, rmax, dr)
+  xprev = packx(rprev, sprev, aprev);
   z = vertcat(m, c);
+  
+  n = numel(rprev);
+  
+  o = numel(m);
+  p = size(c);
+  
   N = numel(xprev);
-  M = numel(z);
-  J = 3 * n;
-  K = N - 3 * n;
+  J = numel(rprev);
+  K = N - J;
   
-  A = [U, zeros(J, K); zeros(K, J), eye(K)];
+  A = [Ars, zeros(J, K); zeros(K, J), eye(K)];
   
-  dzdr = -aprev * diag(sin(omega' * rprev)) * omega';
-  H = [M, zeros(n, K); dzdr, zeros(n), zeros(n), zeros(n, K)];
-  for i = 1:(K/n)
-    H((n+1):M,(J+i*n):(J+i*n+n-1)) = cos(dot(omega(:,i), rprev)) * eye(n);
-  end
+  Omega = genOmega(n, rmax, dr);
+  R = genR(n, rmax, dr);
+  expDotProduct = exp(1i * Omega' * (rprev - dr * R))
+  dcdr = 1i * (aprev * Omega') .* expDotProduct;
+  dcda = diag(ones(1, size(Omega, 2)) * expDotProduct);
   
-  [xpred, Ppred] = ekf_predict1(M=xprev, P=Pprev, A=A, Q=Q, W=W);
+  H = [Hrs, zeros(o, K); dcdr, zeros(p, J - n), dcda];
   
-  [rpred, ~, ~, apred] = unpackx(n, xpred);
+  Q = [Qrs, zeros(J, K); zeros(K, J), zeros(K, K)];
   
-  [xupdt, Pupdt] = ekf_update1(M=xpred, P=Ppred, Y=z, H=H, R=Q, h=interp(apred, omega, xpred));
+  [xpred, Ppred] = ekf_predict1(M=xprev, P=Pprev, A=A, Q=Q);
   
-  [r, dr, ddr, a] = unpackx(xupdt);
+  [rpred, ~, apred] = unpackx(n, J-n, p, xpred);
+  
+  R = [Rm, zeros(o, p); zeros(p, o), zeros(p, p)];
+  
+  %h = ones(1, size(Omega, 2)) * expDotProduct;
+  [xupdt, Pupdt] = ekf_update1(M=xpred, P=Ppred, Y=z, H=H, R=R);
+  
+  [r, s, a] = unpackx(xupdt);
   P = Pupdt;
 end

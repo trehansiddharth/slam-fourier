@@ -1,8 +1,7 @@
-function [r, dr, ddr, a] = unpackx(n, x)
+function [r, s, a] = unpackx(n, d, p, x)
   N = numel(x);
-  K = N - 3 * n;
+  K = N - d;
   r = x(1:n);
-  dr = x((n+1):(2*n));
-  ddr = x((2*n+1):(3*n));
-  a = reshape(x((3*n+1):N), [n, K/n]);
+  s = x((n+1):(n+d));
+  a = reshape(x((n+d+1):end), [p, K/p]);
 end

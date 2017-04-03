@@ -1,3 +1,3 @@
-function x = packx(r, dr, ddr, a)
-  x = vertcat(r, dr, ddr, reshape(a, [numel(a), 1]))
+function x = packx(r, s, a)
+  x = vertcat(r, s, reshape(a, [numel(a), 1]))
 end
