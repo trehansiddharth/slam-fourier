@@ -1,9 +1,7 @@
-function R = genR(n, xmax, dx)
-  N = floor(xmax / dx);
-  R = zeros(n, N^n);  
-  for j = 1:N^n
-    for i = 1:n
-      R(i, j) = 1 + mod(floor(j / (N^(i-1))), N);
-    end
-  end
+function R = genR(gridShape)
+  n = numel(gridShape);
+  N = prod(gridShape);
+  c = cell(1, n);
+  [c{:}] = ind2sub(gridShape, 1:N);
+  R = vertcat(c{end:-1:1});
 end
