@@ -14,19 +14,19 @@ function [r, s, a, P] = slamstep(rprev, sprev, aprev, Pprev, m, c, Ars, Hrs, Qrs
   % Compute state transition matrix (perform Ars on r and s, preserve map)
   A = [Ars, zeros(J, K); zeros(K, J), eye(K)];
   
-  % Compute measurement matrix (perform Hrs on r and s, do fancy stuff on map)
-  R = genR(gridShape); % Compute coordinates of grid points
-  [G, dGdr] = gaussianInterp(rprev, dr, p, gridShape, covBlur); % Compute matrices for Gaussian interpolation and its derivative
-  dcdr = aprev * dGdr; % Compute derivative of color with respect to position
-  dcda = G; % Compute derivative of color with respect to map coefficients
-  H = [Hrs, zeros(o, K); dcdr, zeros(p, J - n), dcda]; % Combine into measurement matrix
-  
   % Compute process noise covariance matrix (Qrs for noise on r and s, zero noise for map coefficients)
   Q = [Qrs, zeros(J, K); zeros(K, J), zeros(K, K)];
   
   % Run EKF prediction step and unpack result
   [xpred, Ppred] = ekf_predict1(M=xprev, P=Pprev, A=A, Q=Q);
   [rpred, spred, apred] = unpackx(n, J-n, p, xpred);
+  
+  % Compute measurement matrix (perform Hrs on r and s, do fancy stuff on map)
+  R = genR(gridShape); % Compute coordinates of grid points
+  [G, dGdr] = gaussianInterp(rprev, dr, dr * R, 3, covBlur); % Compute matrices for Gaussian interpolation and its derivative
+  dcdr = aprev * dGdr; % Compute derivative of color with respect to position
+  dcda = G; % Compute derivative of color with respect to map coefficients
+  H = [Hrs, zeros(o, K); dcdr, zeros(p, J - n), dcda]; % Combine into measurement matrix
   
   % Compute measurement noise covariance matrix (Rm for noise on measurement m from r and s, zero noise for map coefficients)
   R = [Rm, zeros(o, p); zeros(p, o), zeros(p, p)];

@@ -1,3 +1,3 @@
-function H = imuMeasure(n, K)
-  H = [zeros(n), zeros(n), K * eye(n)];
+function H = imuMeasure(n)
+  H = [zeros(n), zeros(n), eye(n)];
 end
